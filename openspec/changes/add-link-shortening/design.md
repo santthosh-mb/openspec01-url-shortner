@@ -63,6 +63,15 @@ Use `new URL(input)` (throws on malformed) and then check `protocol === 'http:' 
 ### Decision: Prisma client singleton in `app/lib/db.ts`
 Next.js dev hot-reload will create many Prisma clients without a singleton guard. Use the standard `globalThis` cached pattern. Imported by both route handlers.
 
+### Decision: Prisma 7 driver adapter — `@prisma/adapter-better-sqlite3`
+Prisma 7's `prisma-client` provider does not ship an embedded engine for SQLite — `new PrismaClient()` throws unless given an `adapter` or `accelerateUrl`. We use `@prisma/adapter-better-sqlite3` with `better-sqlite3`: native, in-process, simplest match for a local SQLite file.
+
+This contradicts the proposal's "no new runtime dependencies expected" line — that assumption was based on pre-7 Prisma. Two new runtime deps are added: `@prisma/adapter-better-sqlite3` and `better-sqlite3`.
+
+**Alternatives considered:**
+- `@prisma/adapter-libsql` + `@libsql/client`: WASM-friendly, edge-runtime compatible, but unnecessary complexity for a local dev SQLite file.
+- Switching to Postgres via `@prisma/adapter-pg`: out of scope; SQLite is what the proposal specifies.
+
 ### Decision: Use 308 redirects for `GET /:slug`
 308 (Permanent) is cacheable and preserves method. Short links are stable by design. Use 307 only if we later need to opt out of caching.
 
